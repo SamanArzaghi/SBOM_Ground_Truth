@@ -160,52 +160,40 @@ You are tasked with designing a file structure for a software project based on t
 - Validate that the structure adheres to common conventions for the programming language and framework being used.
 
 << Desired Output >>
-The output should be in JSON format with two main sections: file_structure and file_responsibilities:
+The output should be in JSON format with a single section: files, where each entry includes the file's path, role, and dependencies:
 {
-  "file_structure": {
-    "root": {
-      "directories": [
-        {
-          "name": "src",
-          "files": ["main.py", "auth.py", "utils.py"]
-        },
-        {
-          "name": "tests",
-          "files": ["test_main.py", "test_auth.py"]
-        },
-        {
-          "name": "config",
-          "files": ["config.json"]
-        }
-      ]
-    }
-  },
-  "file_responsibilities": {
-    "main.py": {
+  "files": [
+    {
+      "path": "src",
+      "name": "main.py",
       "role": "Main entry point of the application",
       "dependencies": ["Dependency1"]
     },
-    "auth.py": {
+    {
+      "path": "src",
+      "name": "auth.py",
       "role": "Handles authentication logic",
       "dependencies": ["Dependency3"]
     },
-    "utils.py": {
+    {
+      "path": "src",
+      "name": "utils.py",
       "role": "Provides utility functions",
       "dependencies": ["Dependency2"]
     },
-    "test_main.py": {
+    {
+      "path": "tests",
+      "name": "test_main.py",
       "role": "Tests the main application logic",
       "dependencies": []
     },
-    "test_auth.py": {
+    {
+      "path": "tests",
+      "name": "test_auth.py",
       "role": "Tests the authentication module",
       "dependencies": []
-    },
-    "config.json": {
-      "role": "Stores configuration settings",
-      "dependencies": []
-    }
-  }
+    }, ...
+  ]
 }
 
 << Note >>
@@ -345,3 +333,31 @@ The output should be a structured feedback report in JSON format, with a single 
 - Ensure feedback is specific and actionable, enabling easy implementation of improvements.
 """
 
+    refinement_prompt = """
+<< Task >>
+You are tasked with refining a code file based on feedback received from both single-file and cross-file validation processes. The goal is to produce a final, polished version of the code that addresses all identified issues and aligns with the project's scaffolding, dependency blueprint, and SBOM.
+
+<< Instructions >>
+1. Feedback Integration:
+- Review the feedback provided for the specific code file, addressing logical errors, inconsistencies, and dependency issues.
+- Incorporate feedback from the cross-file validation to ensure global consistency and alignment with the project structure.
+
+2. Code Refinement:
+- Correct any logical flaws or broken logic identified in the feedback.
+- Ensure all dependencies are correctly imported and utilized, removing any unused or redundant references.
+- Align the code with the project's coding standards, ensuring consistency in variable names, function signatures, and class structures.
+
+3. Error Handling and Documentation:
+- Implement adequate error-handling mechanisms, such as try-except blocks or validation checks, as suggested in the feedback.
+- Enhance documentation with clear comments and docstrings for classes, functions, and major sections to improve readability and maintainability.
+
+4. Performance and Scalability:
+- Optimize code sections for better performance and scalability, based on feedback suggestions.
+
+5. Final Output:
+- Ensure the final code is complete, functional, and free of any unfinished sections or placeholders.
+- The output should be the refined code only, without any extra text or annotations.
+
+<< Desired Output >>
+The output should be a complete and refined version of the code file in python, addressing all feedback and ensuring alignment with the project's scaffolding and dependencies.
+"""
