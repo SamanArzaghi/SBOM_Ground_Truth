@@ -31,7 +31,7 @@ async def main():
     """
     
     # Call the generate method with the dummy input
-    await generator_instance.generate(CycloneDX=dummy_cyclonedx_sbom)
+    await generator_instance.generate(CycloneDX=dummy_cyclonedx_sbom, num_refinements=1, base_directory="generated_code")
 
 if __name__ == "__main__":
     asyncio.run(main())

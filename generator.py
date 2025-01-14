@@ -15,7 +15,7 @@ class code_generator:
         self.refined_code_tasks = []
         self.global_feedback = {}
         
-    async def generate(self, CycloneDX: str = "", num_refinements: int = 3):
+    async def generate(self, CycloneDX: str = "", num_refinements: int = 3, base_directory: str = "generated_code"):
         # Parse the CycloneDX SBOM
         sbom_parsed = await self.handle_sbom_parsing(CycloneDX)
 
@@ -70,7 +70,7 @@ class code_generator:
                 refined_code = await task
                 self.code_generated[file_name]["code"] = refined_code
 
-        await self.create_and_write_files(base_directory="generated_code")
+        await self.create_and_write_files(base_directory=base_directory)
 
     async def create_and_write_files(self, base_directory: str):
         for file_name, file_info in self.code_generated.items():
