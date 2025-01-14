@@ -10,8 +10,7 @@ This repository focuses on leveraging Large Language Models (LLMs) to generate s
 
 ## Pipeline Overview
 
-![Uploading SBOM Report Dia Pipe.jpg…]()
-
+![SBOM Report Dia Pipe](https://github.com/user-attachments/assets/c4bb25c2-e063-41c7-af11-878db2c5b483)
 This repository implements a modular and scalable pipeline for generating source code from SBOMs using the CycloneDX format. The pipeline employs a Chain of Thought (CoT) reasoning approach to ensure precision and incorporates iterative refinement to enhance code accuracy and consistency.
 
 ### Pipeline Stages
