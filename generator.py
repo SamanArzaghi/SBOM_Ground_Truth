@@ -46,13 +46,14 @@ class code_generator:
             self.refined_code_tasks.clear()   
             # Create async tasks for file feedback generation
             for file_name, file_info in self.code_generated.items():
-                task = self.get_feedback(role=file_info["role"], dependencies=file_info["dependencies"], code=file_info["code"], source_code_scaffolding=source_code_scaffolding)
+                task = self.get_feedback(file_name=file_name, role=file_info["role"], dependencies=file_info["dependencies"], code=file_info["code"], source_code_scaffolding=source_code_scaffolding)
                 self.file_feedback_tasks.append((task, file_name)) 
             for task, file_name in self.file_feedback_tasks:
                 feedback = await task
                 self.file_feedback[file_name] = feedback
+
             # Generate feedback on overall codes
-            global_feedback = await self.get_global_feedback(all_codes=self.code_generated, source_code_scaffolding=source_code_scaffolding)
+            global_feedback = await self.get_global_feedback(all_codes=str(self.code_generated), source_code_scaffolding=source_code_scaffolding)
             self.global_feedback.update(global_feedback)
             
             # Refine the code based on feedbacks
@@ -60,10 +61,15 @@ class code_generator:
                 # Retrieve single feedback for the file
                 single_feedback = self.file_feedback.get(file_name, "")
                 # Retrieve global feedback for the file
-                global_feedback_issues = self.global_feedback.get(file_name, {}).get('issues', [])
+                global_feedback_issues = []
+                for feedback in self.global_feedback.get("feedbacks", []):
+                    if feedback["file"] == file_name:
+                        global_feedback_issues = feedback.get("issues", [])
+                        break
+
 
                 # Create a task to refine the code
-                task = self.refine_code(feedbacks=[single_feedback, global_feedback_issues], code=file_info["code"])
+                task = self.refine_code(file_name=file_name, feedbacks=[str(single_feedback), str(global_feedback_issues)], code=file_info["code"], source_code_scaffolding=source_code_scaffolding)
                 self.refined_code_tasks.append((task, file_name))
                 
             for task, file_name in self.refined_code_tasks:
@@ -71,19 +77,29 @@ class code_generator:
                 self.code_generated[file_name]["code"] = refined_code
 
         await self.create_and_write_files(base_directory=base_directory)
-
+    
     async def create_and_write_files(self, base_directory: str):
+        def clean_code_content(code):
+            lines = code.splitlines()
+            # Remove the first and last lines if they contain backticks
+            if lines and lines[0].startswith("```") and lines[-1].startswith("```"):
+                lines = lines[1:-1]
+            return "\n".join(lines)
+
         for file_name, file_info in self.code_generated.items():
             # Prepend the base directory to the file path
             file_path = os.path.join(base_directory, file_info["path"])
             code = file_info["code"]
 
+            # Clean the code content
+            cleaned_code = clean_code_content(code)
+
             # Create the directory if it doesn't exist
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
-            # Write the code to the file
+            # Write the cleaned code to the file
             with open(file_path, 'w') as file:
-                file.write(code)
+                file.write(cleaned_code)
 
 
     async def handle_sbom_parsing(self, CycloneDX: str = ""):
@@ -164,16 +180,19 @@ Generated Code:"""
 
         return result, file_name, file_role, file_dependencies, file_path
 
-    async def get_feedback(self, role, dependencies, code, source_code_scaffolding):
-        sys_prompt = Prompts.feedback_generation_prompt
+    async def get_feedback(self, file_name, role, dependencies, code, source_code_scaffolding):
+        sys_prompt = Prompts.single_file_validation_prompt
         user_prompt = f"""
+<< File Name >>
+{file_name}
+
 << File Role >>
 {role}
 
 << File Dependencies >>
 {dependencies}
 
-<< Generated Code >>
+<< File Code >>
 {code}
 
 << Source Code Scaffolding >>
@@ -191,7 +210,7 @@ Feedback:"""
         return feedback
 
     async def get_global_feedback(self, all_codes, source_code_scaffolding):
-        sys_prompt = Prompts.global_feedback_generation_prompt
+        sys_prompt = Prompts.global_file_validation_prompt
         user_prompt = f"""
 << All Generated Codes >>
 {all_codes}
@@ -210,14 +229,20 @@ Global Feedback:"""
 
         return global_feedback
 
-    async def refine_code(self, feedbacks, code):
-        sys_prompt = Prompts.code_refinement_prompt
+    async def refine_code(self, file_name, feedbacks, code, source_code_scaffolding):
+        sys_prompt = Prompts.refinement_prompt
         user_prompt = f"""
+<< File Name >>
+{file_name}
+
 << Original Code >>
 {code}
 
 << Feedbacks >>
 {feedbacks}
+
+<< Source Code Scaffolding >>
+{source_code_scaffolding}
 
 Refined Code:"""
 

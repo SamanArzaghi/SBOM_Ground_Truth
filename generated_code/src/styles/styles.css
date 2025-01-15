@@ -1,0 +1,107 @@
+/* 
+ * Application Styles
+ * This stylesheet defines the base, layout, and component styles for the application.
+ * It follows a simple, clean design principle with a focus on readability and responsiveness.
+ */
+
+/* Base styles */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+    color: #333;
+}
+
+/* Container styles */
+.container {
+    width: 80%;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header styles */
+header {
+    background-color: #6200ea;
+    color: #fff;
+    padding: 10px 0;
+    text-align: center;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 2em;
+}
+
+/* Navigation styles */
+nav {
+    margin: 20px 0;
+    text-align: center;
+}
+
+nav a {
+    margin: 0 15px;
+    text-decoration: none;
+    color: #6200ea;
+    font-weight: bold;
+}
+
+nav a:hover {
+    text-decoration: underline;
+}
+
+/* Main content styles */
+main {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1); /* Simplified shadow for performance */
+}
+
+/* Footer styles */
+footer {
+    background-color: #6200ea;
+    color: #fff;
+    text-align: center;
+    padding: 10px 0;
+    position: relative; /* Changed to prevent overlap */
+    width: 100%;
+}
+
+/* Button styles */
+button {
+    background-color: #6200ea;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+}
+
+button:hover {
+    background-color: #3700b3; /* Consistent hover color */
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+    .container {
+        width: 95%;
+    }
+
+    header h1 {
+        font-size: 1.5em;
+    }
+
+    nav a {
+        margin: 0 10px;
+    }
+
+    footer {
+        padding: 15px 0; /* Adjusted for better responsiveness */
+    }
+
+    button {
+        padding: 8px 16px; /* Adjusted for smaller screens */
+    }
+}

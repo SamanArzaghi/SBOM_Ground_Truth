@@ -1,252 +1,284 @@
 class Prompts:
     sbom_parsing_prompt = """
 << Task >>
-Parse a CycloneDX SBOM (in JSON format) to extract and organize key information. The goal is to create a structured representation of the project's metadata, dependencies, and their relationships. This data will be used for further processing in a software pipeline.
+Parse a CycloneDX SBOM (in JSON format) to extract and organize key information. The goal is to generate a structured representation of the project's metadata, dependencies, and their relationships. This structured data will serve as the input for subsequent steps in a software generation pipeline.
 
 << Instructions >>
 1. **Metadata Extraction**:
-   - Extract fields such as project name, version, description, authors, and licenses.
-   - Ensure all fields are clearly labeled and complete.
+   - Extract essential fields from the SBOM, including:
+     - `project_name`: The name of the project.
+     - `version`: The project's version.
+     - `description`: A brief description of the project.
+     - `authors`: A list of authors (if available).
+     - `licenses`: Associated licenses for the project.
+   - Ensure all fields are clearly labeled and populated. If a field is missing, mark it as `null` or `not available`.
 
 2. **Dependency Analysis**:
-   - List dependencies with details: name, version, type (e.g., direct, transitive), hashes, and licenses.
-   - Map relationships between dependencies (e.g., parent-child relationships for transitive dependencies).
+   - Create a comprehensive list of all dependencies, capturing:
+     - `name`: The dependency name.
+     - `version`: The dependency version.
+     - `type`: Categorize dependencies as `direct` or `transitive`.
+     - `hashes`: Any provided integrity hashes (e.g., SHA-256).
+     - `licenses`: Licenses associated with the dependency.
+   - Identify and map relationships:
+     - Use a parent-child relationship structure to show transitive dependencies.
+     - Explicitly mention which dependencies are direct.
 
 3. **Validation**:
-   - Confirm JSON structure compliance with CycloneDX schema.
-   - Report anomalies with clear error messages.
+   - Ensure the parsed JSON adheres to the CycloneDX schema.
+   - Validate all key fields and report any missing or malformed data.
+   - Provide a clear error message for anomalies, such as invalid relationships or missing attributes.
 
-4. **Clarity and Completeness**:
-   - Ensure data is cleanly formatted and human-readable.
-   - Include comments or annotations for complex entries.
+4. **Output Formatting**:
+   - Present the extracted data in a clean, well-structured JSON format.
+   - Include detailed annotations or comments for complex entries, where necessary.
+   - Ensure the output is human-readable and machine-parseable.
 
-<< Desired Output >>
-The output should be a JSON object that includes sections for metadata, dependencies, and relationships. Below is an example of the expected structure:
-
+<< Desired Output Format >>
 {
   "metadata": {
-    "name": "Example Project",
-    "version": "1.0.0",
-    "description": "This is a sample project for demonstrating SBOM parsing.",
-    "authors": ["Jane Doe", "John Smith"],
-    "licenses": ["MIT"]
+    "project_name": "string",
+    "version": "string",
+    "description": "string",
+    "authors": ["string", ...],
+    "licenses": ["string", ...]
   },
   "dependencies": [
     {
-      "name": "LibraryA",
-      "version": "2.1.0",
-      "type": "direct",
-      "hashes": ["sha256:abcd1234"],
-      "license": "Apache-2.0"
+      "name": "string",
+      "version": "string",
+      "type": "string (direct|transitive)",
+      "hashes": ["string", ...],
+      "licenses": ["string", ...],
+      "children": [
+        {
+          "name": "string",
+          "version": "string",
+          "type": "string (direct|transitive)",
+          "hashes": ["string", ...],
+          "licenses": ["string", ...]
+        },
+        ...
+      ]
     },
-    {
-      "name": "LibraryB",
-      "version": "3.0.1",
-      "type": "transitive",
-      "hashes": ["sha256:efgh5678"],
-      "license": "GPL-3.0"
-    },
-    {
-      "name": "LibraryC",
-      "version": "1.2.3",
-      "type": "direct",
-      "hashes": ["sha256:ijkl9012"],
-      "license": "BSD-2-Clause"
-    }
+    ...
   ],
-  "relationships": {
-    "LibraryA": ["LibraryB"],
-    "LibraryC": []
+  "validation": {
+    "is_valid": true,
+    "errors": [
+      {
+        "field": "string",
+        "issue": "string"
+      }
+    ]
   }
 }
 
-<< Note >>
-This output will serve as the structured input for subsequent steps in the pipeline. Be precise, comprehensive, and validate the data thoroughly.
+<< Notes >>
+- Ensure the output is structured to facilitate easy processing in subsequent pipeline steps.
+- Any detected issues must be logged in the `validation.errors` array, with a clear explanation of the problem.
+- Use a consistent naming scheme for fields to avoid ambiguity.
+- Do not omit fields even if they are empty; instead, set them to `null` or an appropriate placeholder.
 """
     
     dependency_blueprint_creation_prompt = """
 << Task >>
-Create a logical structure of dependencies based on the structured data extracted from a CycloneDX SBOM. This blueprint will define the hierarchy, initialization order, and usage patterns of these dependencies, serving as a guide for project scaffolding and file generation.
+Create a logical blueprint of dependencies based on the structured data extracted from a CycloneDX SBOM. This blueprint will define the hierarchy, initialization sequence, and usage patterns of dependencies, serving as a foundation for project scaffolding and file generation.
 
 << Instructions >>
 1. **Hierarchy Definition**:
-   - Identify the dependency hierarchy, distinguishing between direct and transitive dependencies.
-   - Clearly represent parent-child relationships, mapping transitive dependencies to their respective parents.
+   - Identify the dependency hierarchy by distinguishing between:
+     - Direct dependencies (dependencies directly required by the project).
+     - Transitive dependencies (dependencies required by other dependencies).
+   - Map parent-child relationships, clearly showing which dependencies rely on others.
+   - Highlight root dependencies (dependencies with no parents) and leaf dependencies (dependencies with no children).
 
 2. **Initialization Order**:
-   - Determine the correct order for initializing dependencies, ensuring transitive dependencies are initialized before their parents.
-   - Consider factors such as dependency precedence and interdependency relationships.
+   - Determine the correct sequence for initializing dependencies, ensuring:
+     - Transitive dependencies are initialized before their parents.
+     - Dependencies that depend on shared resources or configurations are initialized in the appropriate order.
+   - Use topological sorting to define the order if dependencies form a Directed Acyclic Graph (DAG).
+   - Flag and document any circular dependencies with appropriate warnings.
 
 3. **Usage Patterns**:
-   - Analyze how each dependency is used in the project (e.g., as a library, framework, or utility).
-   - Include usage-specific details, such as initialization functions, required configurations, or runtime dependencies.
+   - For each dependency, define:
+     - How it is used (e.g., library, framework, plugin, utility).
+     - Specific initialization functions or methods required.
+     - Required configurations (e.g., environment variables, runtime parameters).
+     - Any additional runtime dependencies or conditions.
 
 4. **Validation**:
-   - Ensure the hierarchy and initialization order are logically consistent and free of circular dependencies.
-   - Validate that all dependencies in the blueprint align with the SBOM information.
+   - Validate the blueprint to ensure:
+     - Logical consistency in hierarchy and initialization order.
+     - No missing or redundant dependencies.
+     - All dependencies match the information extracted from the SBOM.
+     - Circular dependencies are identified and flagged for resolution.
 
 5. **Documentation**:
-   - Provide a concise explanation for the structure, highlighting any assumptions or simplifications.
-   - Use comments or annotations to clarify complex relationships or initialization steps.
+   - Provide a brief explanation for the overall structure, including:
+     - Key assumptions (e.g., inferred relationships, initialization logic).
+     - Simplifications or deviations from the SBOM.
+   - Use annotations or comments to clarify:
+     - Complex relationships (e.g., shared dependencies between modules).
+     - Critical steps in the initialization sequence.
 
 << Desired Output >>
-The output should be a JSON object with three main sections: hierarchy, initialization_order, and usage_patterns. Below is an example of the expected structure:
-
 {
-  "hierarchy": {
-    "direct_dependencies": [
-      {
-        "name": "Dependency1",
-        "children": ["Dependency2", "Dependency3"]
-      }
-    ],
-    "transitive_dependencies": [
-      {
-        "name": "Dependency2",
-        "parent": "Dependency1"
+  "hierarchy": [
+    {
+      "name": "string",
+      "version": "string",
+      "type": "string (direct|transitive)",
+      "parent": "string (parent dependency name or null for root)",
+      "children": [
+        "string (child dependency name)", ...
+      ]
+    },
+    ...
+  ],
+  "initialization_order": [
+    {
+      "name": "string",
+      "version": "string",
+      "initialization_step": "integer (execution order)"
+    },
+    ...
+  ],
+  "usage_patterns": [
+    {
+      "name": "string",
+      "usage": "string (library|framework|utility|plugin)",
+      "initialization_function": "string (function name or null if none)",
+      "configurations": {
+        "key": "string",
+        "value": "string"
       },
+      "runtime_dependencies": ["string", ...]
+    },
+    ...
+  ],
+  "validation": {
+    "is_consistent": true,
+    "issues": [
       {
-        "name": "Dependency3",
-        "parent": "Dependency1"
+        "type": "string (missing|circular_dependency|redundant)",
+        "description": "string"
       }
     ]
   },
-  "initialization_order": [
-    "Dependency2",
-    "Dependency3",
-    "Dependency1"
-  ],
-  "usage_patterns": {
-    "Dependency1": {
-      "type": "framework",
-      "usage": "Primary framework for the project",
-      "configurations": ["config.json"]
-    },
-    "Dependency2": {
-      "type": "library",
-      "usage": "Provides utility functions",
-      "initialization": "initialize_dependency2()"
-    },
-    "Dependency3": {
-      "type": "library",
-      "usage": "Handles authentication",
-      "required_runtime": ["token_manager"]
-    }
-  }
+  "documentation": "string (concise explanation of the blueprint)"
 }
 
-<< Note >>
-- Ensure each dependency is accounted for in the blueprint, with no missing or redundant entries.
-- Provide meaningful identifiers and explanations for initialization order and usage patterns to simplify downstream implementation.
+<< Notes >>
+- The output should be a clean JSON structure that is easy to process programmatically.
+- All dependencies must be accounted for, with no missing or redundant entries.
+- Initialization order and usage patterns should align with industry best practices for dependency management.
+- Any detected issues must be logged in the `validation.issues` array for transparency and resolution.
 """
 
     source_code_scaffolding_prompt = """
 << Task >>
-Design a file structure for a software project based on the dependency blueprint. The goal is to define the project’s file organization and assign clear responsibilities to each file. This scaffolding will serve as the foundation for the actual file and code generation in subsequent steps.
+Design a file structure for a software project based on the dependency blueprint. The goal is to define a clear, logical, and modular project organization, assigning specific roles and responsibilities to each file. This scaffolding will serve as the foundation for subsequent file and code generation.
 
 << Instructions >>
 1. **File Structure Definition**:
-   - Organize the project into logical directories and files, reflecting common software project patterns (e.g., `src`, `tests`, `config`).
-   - Ensure dependencies are grouped or referenced appropriately based on their roles in the project.
+   - Organize the project into logical files, each with a clearly defined role.
+   - Provide the relative path for each file within the project (e.g., `src/main.py`, `config/settings.yaml`).
+   - Ensure the structure follows common conventions for the programming language and framework being used.
 
 2. **File Responsibilities**:
-   - Clearly define the purpose of each file (e.g., main application logic, utility functions, configuration, testing).
-   - Ensure each file has a specific, focused responsibility to avoid overlap and complexity.
+   - Assign a specific role to each file. For example:
+     - `main.py` or `index.js` for the application’s entry point.
+     - `config.yaml` or `settings.json` for configuration settings.
+     - `utils.py` or `helpers.js` for reusable utility functions.
+   - Avoid role overlap by ensuring each file has a distinct purpose.
 
-3. **Dependency References**:
-   - Explicitly associate each file with the dependencies it will use.
-   - Identify any shared dependencies and determine where they should be instantiated or initialized.
+3. **Dependency Mapping**:
+   - For each file, list the dependencies it uses, referencing the dependency blueprint.
+   - Include details for each dependency:
+     - `name`: The dependency name (e.g., `requests`, `flask`).
+     - `type`: Whether it is a `direct` or `transitive` dependency.
+     - `usage`: How the dependency is used (e.g., `initialization`, `reference`).
 
 4. **Scalability and Maintainability**:
-   - Ensure the structure supports future growth and modularity, allowing easy addition or removal of features and dependencies.
-   - Avoid creating overly complex or deeply nested file structures.
+   - Ensure the structure supports future growth and modularity.
+   - Avoid overly complex or deeply nested file structures unless justified by project requirements.
 
 5. **Validation**:
-   - Ensure every dependency from the blueprint is accounted for and mapped to one or more files.
-   - Validate that the structure adheres to common conventions for the programming language and framework being used.
+   - Verify that all dependencies from the blueprint are mapped to appropriate files.
+   - Ensure the structure adheres to best practices for the chosen language and framework.
+   - Check for unused or redundant files and resolve conflicts or ambiguities.
+
+6. **Documentation**:
+   - Include a concise explanation for the structure and key design choices.
+   - Highlight placeholders for future expansion, if applicable.
 
 << Desired Output >>
-The output should be in JSON format with a single section: `files`, where each entry includes the file's path, role, and dependencies. Below is an example of the expected structure:
-
 {
   "files": [
     {
-      "path": "src",
-      "name": "main.py",
-      "role": "Main entry point of the application",
-      "dependencies": ["Dependency1"]
+      "name": "string (name of the file with file format, e.g., 'main.py', 'config.json')",
+      "path": "string (relative path to the file within the project, e.g., 'src/main.py', 'config/settings.yaml')",
+      "role": "string (description of the file's role, e.g., 'entry point', 'configuration', 'utility functions')",
+      "dependencies": [
+        {
+          "name": "string (name of the dependency, e.g., 'requests', 'numpy')",
+          "type": "string (direct|transitive)",
+          "usage": "string (description of how the dependency is used, e.g., 'initialization', 'reference')"
+        }
+      ]
     },
-    {
-      "path": "src",
-      "name": "auth.py",
-      "role": "Handles authentication logic",
-      "dependencies": ["Dependency3"]
-    },
-    {
-      "path": "src",
-      "name": "utils.py",
-      "role": "Provides utility functions",
-      "dependencies": ["Dependency2"]
-    },
-    {
-      "path": "tests",
-      "name": "test_main.py",
-      "role": "Tests the main application logic",
-      "dependencies": []
-    },
-    {
-      "path": "tests",
-      "name": "test_auth.py",
-      "role": "Tests the authentication module",
-      "dependencies": []
-    }
+    ...
   ]
 }
 
-<< Note >>
-- Ensure clarity and precision in the file roles and dependencies to simplify subsequent file and code generation.
-- Highlight any files or directories that are placeholders for future expansion (e.g., additional modules or features).
-- Use comments or annotations for complex or unconventional design choices.
-"""
+<< Notes >>
+- Ensure all files are accounted for and their roles are clearly defined.
+- Highlight any placeholders for future expansion or unresolved dependencies.
+- Validation issues must include actionable insights for resolution.
+- The structure should be both machine-parseable and intuitive for human developers."""
 
     file_generation_prompt = """
 << Task >>
-Generate a single functional file for a software project based on the provided scaffolding and dependency blueprint. The file must align with the SBOM specifications and fulfill its defined role, referencing the necessary dependencies and adhering to best practices for coding and documentation.
+Generate a complete and functional code file for a software project based on the provided scaffolding and dependency blueprint. The file must align with the SBOM specifications and fulfill its defined role, integrating the necessary dependencies and adhering to best practices for coding and documentation.
 
 << Instructions >>
 1. **File Role Adherence**:
-   - Ensure the content of the file matches its assigned role in the scaffolding. For example:
-     - If generating `main.py`, it should serve as the entry point of the application.
-     - If generating `auth.py`, it should contain authentication logic.
-     - If generating `requirements.txt`, it should list all required dependencies in the correct format.
+   - The file must fully implement its assigned role as defined in the scaffolding. Examples:
+     - `main.py`: Acts as the application’s entry point, initializing core dependencies and running the main logic.
+     - `auth.py`: Implements authentication logic with reusable functions or classes.
+     - `requirements.txt`: Lists all project dependencies in the correct syntax and versions.
+   - Ensure the file’s content aligns with its intended purpose.
 
 2. **Dependency Integration**:
-   - Include and correctly reference the dependencies assigned to the file in the blueprint.
-   - Use standard import and initialization patterns for the programming language (e.g., Python import statements).
-   - Ensure the dependency versions match those specified in the SBOM.
+   - Import and initialize all dependencies assigned to the file, using the dependency blueprint as a guide.
+   - Follow standard patterns for dependency management in the chosen programming language.
+   - Ensure all dependencies match the versions specified in the SBOM and are properly used within the file.
 
 3. **Functionality and Completeness**:
-   - Include sufficient functionality to fulfill the file’s role. For example:
-     - Implement main program logic for `main.py`.
-     - Provide reusable functions or classes for utility files.
-     - Include valid configurations or test cases for configuration or test files.
-     - If applicable, include example usage or tests within the file.
+   - Fully implement the file’s required functionality. For example:
+     - Implement main logic, such as initializing the application, in `main.py`.
+     - Provide reusable utility functions or classes for files like `utils.py`.
+     - Include valid configurations for files like `config.yaml`.
+     - Write meaningful test cases for test files, ensuring proper coverage.
+   - The file must be complete and executable or usable as intended.
 
 4. **Code Style and Documentation**:
-   - Follow language-specific coding standards and conventions (e.g., PEP 8 for Python).
-   - Include comments or docstrings to explain the purpose and functionality of classes, functions, and major code sections.
-   - Use meaningful variable names and structure the code for readability.
+   - Adhere to coding standards and best practices for the programming language (e.g., PEP 8 for Python).
+   - Include:
+     - Comments or docstrings to explain the purpose and functionality of classes, functions, or major sections.
+     - Clear and meaningful variable names for better readability.
+   - Structure the code for maintainability and extensibility.
 
 5. **Validation**:
-   - Ensure the file is syntactically correct and free of runtime errors.
-   - Validate that all required dependencies are correctly imported and used.
-   - Confirm alignment with the scaffolding and dependency blueprint.
+   - Ensure the code is syntactically correct and free of runtime errors.
+   - Validate that all required dependencies are imported and correctly used.
+   - Confirm the file’s implementation aligns with the scaffolding and dependency blueprint.
 
 << Desired Output >>
-Your output should be a complete code file with the correct syntax and structure. Make sure not to include any extra information or text.
-
-<< Note >>
-- Do not leave any function or part of the code incomplete or as a TODO. The code should be complete and functional.
+- The output must contain only the complete and functional content of the generated file. 
+- Do not include any additional text, comments, or explanation in the output.
+- The output should be production-ready, adhering to all standards and fulfilling its designated role and should be executable without any changes.
 """
 
     global_file_validation_prompt = """
@@ -282,17 +314,16 @@ Validate an entire software project to ensure cross-file consistency and alignme
    - Suggest specific refinements or corrections where possible.
 
 << Desired Output >>
-The output should be a structured feedback report in JSON format, with sections for each validation category. Below is an example:
-
+The output should be a structured feedback report in JSON format. The report should contain a key named "feedbacks" with a value that is a list of dictionaries. Each dictionary should represent a file and include the file name and a list of issues identified in that file.
 {
-  "file": "main.py",
-  "issues": ["Incorrect import of auth.py", ...]
-},
-{
-  "file": "auth.py",
-  "issues": ["Incorrect import of utils.py", ...]
-},
-...
+  "feedbacks": [
+    {
+      "file": "string (name of the file with file format, e.g., 'main.py', 'config.json')",
+      "issues": ["string", ...]
+    },
+    ...
+  ]
+}
 
 << Note >>
 - Ensure the report is comprehensive, covering all aspects of the project.
@@ -335,22 +366,23 @@ Validate a single file from a software project to identify any logical errors, i
    - Offer clear suggestions for improvement, ensuring they are practical and align with project goals.
 
 << Desired Output >>
-The output should be a structured feedback report in JSON format, with a single key named "issues". Below is an example:
+The output should be a structured feedback report in JSON format. The report should contain a key named "feedback" with a value that is a list of dictionaries. Each dictionary should represent an issue identified in the file and include the following keys:
+- "line": The line number where the issue occurs.
+- "type": A brief description of the issue type (e.g., "Logical Error", "Unused Import").
+- "description": A detailed explanation of the issue and its potential impact.
+- "suggestion": A practical suggestion for resolving the issue, aligned with project goals.
 
+Example:
 {
-    "issues": [
-        {
-            "file": "main.py",
-            "issues": ["Incorrect import of auth.py", ...]
-        },
-        ...
-    ]
+  "feedbacks": [
+    {
+      "line": integer,
+      "type": "string",
+      "description": "string",
+      "suggestion": "string"
+    }, ...
+  ]
 }
-
-<< Note >>
-- Avoid directly editing the file. Focus only on providing constructive feedback.
-- Highlight critical issues separately from minor ones, emphasizing their impact on functionality or maintainability.
-- Ensure feedback is specific and actionable, enabling easy implementation of improvements.
 """
 
     refinement_prompt = """
@@ -376,8 +408,10 @@ Refine a code file based on feedback from both single-file and cross-file valida
 
 5. **Final Output**:
    - Ensure the final code is complete, functional, and free of any unfinished sections or placeholders.
-   - The output should be the refined code only, without any extra text or annotations.
+   - The output should be the refined code only, without any extra text or annotations, and should be executable without any changes. All parts of the code must be complete, with no TODOs or incomplete sections.
 
 << Desired Output >>
-The output should be a complete and refined version of the code file, addressing all feedback and ensuring alignment with the project's scaffolding and dependencies.
+- The output must contain only the complete and functional content of the generated file. 
+- Do not include any additional text, comments, or explanation in the output.
+- The output should be production-ready, adhering to all standards and fulfilling its designated role and should be executable without any changes.
 """
