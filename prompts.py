@@ -243,7 +243,7 @@ Generate a single functional file for a software project based on the provided s
    - Confirm alignment with the scaffolding and dependency blueprint.
 
 << Desired Output >>
-Your output should be a complete Python file with the correct syntax and structure. Make sure not to include any extra information or text.
+Your output should be a complete code file with the correct syntax and structure. Make sure not to include any extra information or text.
 
 << Note >>
 - Do not leave any function or part of the code incomplete or as a TODO. The code should be complete and functional.
@@ -379,5 +379,5 @@ Refine a code file based on feedback from both single-file and cross-file valida
    - The output should be the refined code only, without any extra text or annotations.
 
 << Desired Output >>
-The output should be a complete and refined version of the code file in Python, addressing all feedback and ensuring alignment with the project's scaffolding and dependencies.
+The output should be a complete and refined version of the code file, addressing all feedback and ensuring alignment with the project's scaffolding and dependencies.
 """
